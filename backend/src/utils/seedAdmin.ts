@@ -18,17 +18,26 @@ async function seed() {
     throw new Error("ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env");
   }
 
-  const existing = await User.findOne({ email });
-  if (existing) {
-    console.log(`[seed] Admin user ${email} already exists, skipping.`);
-    await mongoose.disconnect();
-    return;
-  }
-
   const hashed = await bcrypt.hash(password, 10);
-  await User.create({ email, password: hashed });
+
+// Find any existing admin user
+const existing = await User.findOne();
+
+if (existing) {
+  existing.email = email;
+  existing.password = hashed;
+
+  await existing.save();
+
+  console.log(`[seed] Admin user updated: ${email}`);
+} else {
+  await User.create({
+    email,
+    password: hashed,
+  });
 
   console.log(`[seed] Admin user created: ${email}`);
+}
   await mongoose.disconnect();
 }
 
